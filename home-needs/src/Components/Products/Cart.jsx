@@ -14,8 +14,20 @@ if (!isAuthenticated) {
   return (
     <div className="text-center mt-10">
       <h2>Please login to view your cart</h2>
-      <button onClick={() => navigate("/loginpage")}>Login</button>
-      <button onClick={() => navigate("/register")}>Register</button>
+
+      <button
+        onClick={() => navigate("/loginpage")}
+        className="text-amber-600 underline mr-2"
+      >
+        Login
+      </button>
+
+      <button
+        onClick={() => navigate("/register")}
+        className="text-amber-600 underline"
+      >
+        Register
+      </button>
     </div>
   );
 }

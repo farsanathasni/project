@@ -1,6 +1,6 @@
 import React from 'react'
 
-function Cookware() {
+function Contact() {
   return (
     <div>
       
@@ -8,4 +8,4 @@ function Cookware() {
   )
 }
 
-export default Cookware
+export default Contact

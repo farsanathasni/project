@@ -15,27 +15,34 @@ function LoginPage() {
       password: "" 
     },
     onSubmit: async (values) => {
-      setIsSubmitting(true);
-      setError('');
-      
-      const result = await login(values.email, values.password);
-      
-      if (result.success) {
-        alert("Login successful");
-        navigate("/");
-      } else {
-        setError(result.error);
-      }
-      
-      setIsSubmitting(false);
-    }
+  setIsSubmitting(true);
+  setError("");
+
+  const result = await login(values.email, values.password);
+  if (!result.success) {
+    setError(result.error);
+    setIsSubmitting(false);
+    return;
+  }
+  alert("Login successful");
+
+  // adminlogin
+  const role = result.user.role || "user";
+  if (role === "admin") {
+    navigate("/dashboard");
+  } else {
+    navigate("/");
+  }
+
+  setIsSubmitting(false);
+}
   });
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-amber-50">
       <div className="bg-white p-8 rounded-xl shadow-lg w-full max-w-md">
         <h2 className="text-2xl font-bold text-amber-700 mb-6 text-center">
-          Login to Home Needs
+          Login to Liyana Metals
         </h2>
 
         {error && (
@@ -45,7 +52,6 @@ function LoginPage() {
         )}
 
         <form onSubmit={formik.handleSubmit} className="space-y-4">
-          {/* Email */}
           <div>
             <label className="block text-gray-700 font-medium mb-1">Email</label>
             <input
@@ -59,7 +65,6 @@ function LoginPage() {
             />
           </div>
 
-          {/* Password */}
           <div>
             <label className="block text-gray-700 font-medium mb-1">Password</label>
             <input
@@ -73,7 +78,7 @@ function LoginPage() {
             />
           </div>
 
-          {/* Submit Button */}
+
           <button
             type="submit"
             disabled={isSubmitting}
@@ -83,7 +88,7 @@ function LoginPage() {
           </button>
         </form>
 
-        {/* Register Link */}
+
         <p className="mt-4 text-center text-gray-600">
           Don't have an account?{" "}
           <Link 

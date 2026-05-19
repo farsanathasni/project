@@ -1,69 +1,94 @@
 import React, { useEffect, useState } from "react";
 import Navbar from "../Layout/Navbar";
-import axios from "axios";
 import Footer from "../Layout/Footer";
 import { Link } from "react-router-dom";
+import { useSearch } from "../../Contexts/SerchContext";
+import { FaSearch } from "react-icons/fa";
+import api from "../../Api/Axios";
 
 function Products() {
   const [activeCategory, setActiveCategory] = useState("All Items");
-  const [products, setProducts] = useState([]);
+  // const [products, setProducts] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [loading, setLoading] = useState(false);
+    const { searchTerm, setSearchTerm } = useSearch();
+const [page, setPage] = useState(1);
+const [totalPages, setTotalPages] = useState(1);  
+const [categories, setCategories] = useState(["All Items"]);
 
-  // https://i.pinimg.com/1200x/33/d1/e8/33d1e813d2382ab19adfe03c97ae1ae4.jpg
 
-  // Fetch products
-  useEffect(() => {
+
+
+const fetchProducts = async () => {
+  try {
     setLoading(true);
-    axios
-      .get("http://localhost:3001/products")
-      .then((res) => {
-        setProducts(res.data);
-        setFilteredProducts(res.data);
-        setLoading(false);
-      })
-      .catch((err) => {
-        console.error("Error fetching products:", err);
-        setLoading(false);
-      });
-  }, []);
 
-  // Filter products
-  useEffect(() => {
-    if (activeCategory === "All Items") {
-      setFilteredProducts(products);
-    } else {
-      const filtered = products.filter(
-        (item) => item.category === activeCategory
+    const res = await api.get(
+      `http://localhost:5000/api/products?page=${page}&search=${searchTerm}&category=${activeCategory}`
+    );
+
+    // setProducts(res.data.product);
+    setFilteredProducts(res.data.product); // add this
+    setTotalPages(res.data.totalPages);
+
+  } catch (err) {
+    console.error("Error fetching products:", err);
+  } finally {
+    setLoading(false);
+  }
+};
+
+
+
+useEffect(() => {
+  fetchProducts();
+}, [page, searchTerm, activeCategory]);
+
+
+useEffect(() => {
+  const fetchCategories = async () => {
+    try {
+      const res = await api.get(
+        "http://localhost:5000/api/products/categories"
       );
-      setFilteredProducts(filtered);
-    }
-  }, [activeCategory, products]);
 
-  // ✅ Correct categories
-  const categories = [
-    "All Items",
-    "Cookware",
-    "Appliances",
-    "Cooktop & Chimney",
-    "Kitchen Tools",
-    "Home Appliances",
-    "Homeware"
-  ];
+      setCategories(["All Items", ...res.data]);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  fetchCategories();
+}, []);
+
+
 
   return (
     <>
       <Navbar />
-
-      {/* Category Navbar */}
+      
       <section className="bg-gray-50 py-4">
         <div className="max-w-7xl mx-auto px-4">
           <div className="overflow-x-auto scrollbar-hide">
             <ul className="flex space-x-4">
+                <form className="relative w-full max-w-sm">
+  <input
+    type="text"
+    placeholder="Search item..."
+    value={searchTerm}
+    onChange={(e) => {setSearchTerm(e.target.value);setPage(1);}}
+    className="w-full pl-1 pr-10 py-2 rounded-full border-2 border-amber-600 bg-amber-80 text-gray-800 placeholder-gray-500 focus:outline-none  "
+  />
+
+  <span className="absolute right-5 top-1/2 -translate-y-1/2 ">
+    <FaSearch/>
+  </span>
+</form>
+
               {categories.map((category, index) => (
                 <li key={index}>
                   <button
-                    onClick={() => setActiveCategory(category)}
+                      onClick={() => {setActiveCategory(category);setPage(1);}}
                     className={`px-4 py-2 rounded-full whitespace-nowrap transition ${
                       activeCategory === category
                         ? "bg-amber-600 text-white font-semibold"
@@ -82,8 +107,9 @@ function Products() {
           </div>
         </div>
       </section>
+      
 
-      {/* Products Grid */}
+
       <section className="py-10">
         <div className="max-w-7xl mx-auto px-4">
           {loading && <p className="text-center">Loading...</p>}
@@ -95,12 +121,12 @@ function Products() {
   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
   {filteredProducts.map((item) => (
     <div
-      key={item.id}
+      key={item._id}
       className="bg-white rounded-xl shadow hover:shadow-lg flex flex-col h-full"
     >
-      {/* Card Content */}
+
       <div className="flex-1 flex flex-col">
-        <Link to={`/products/${item.id}`} className="flex-1 flex flex-col">
+        <Link to={`/products/${item._id}`} className="flex-1 flex flex-col">
           <img
             src={item.image}
             alt={item.name}
@@ -122,10 +148,10 @@ function Products() {
         </Link>
       </div>
 
-      {/* Button */}
+
       <div className="p-4">
         <Link
-          to={`/products/${item.id}`}
+          to={`/products/${item._id}`}
           className="block w-full text-center bg-amber-600 text-white px-6 py-2 rounded-lg hover:bg-amber-700"
         >
           View Details
@@ -135,6 +161,27 @@ function Products() {
   ))}
 </div>
 
+<div className="flex justify-center gap-4 mt-8">
+  <button
+    onClick={() => setPage(page - 1)}
+    disabled={page === 1}
+    className="px-4 py-2 bg-gray-300 rounded disabled:opacity-50"
+  >
+    Prev
+  </button>
+
+  <span className="px-4 py-2">
+    Page {page} of {totalPages}
+  </span>
+
+  <button
+    onClick={() => setPage(page + 1)}
+    disabled={page === totalPages}
+    className="px-4 py-2 bg-amber-600 text-white rounded disabled:opacity-50"
+  >
+    Next
+  </button>
+</div>
 
 
         </div>
@@ -145,3 +192,5 @@ function Products() {
 }
 
 export default Products;
+
+

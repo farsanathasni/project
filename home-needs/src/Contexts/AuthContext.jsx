@@ -1,5 +1,6 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import api from '../Api/Axios'; // Import your axios instance
+import api from '../Api/Axios'; 
+
 
 const AuthContext = createContext();
 
@@ -12,150 +13,171 @@ export const useAuth = () => {
 };
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
 
-  // Check if user is logged in on initial load
-const [loadingAuth, setLoadingAuth] = useState(true);
+  const [user, setUser] = useState(null);
+  const [loadingAuth, setLoadingAuth] = useState(true);
+
 
 useEffect(() => {
   const storedUser = localStorage.getItem('user');
   if (storedUser) {
     try {
       setUser(JSON.parse(storedUser));
-    } catch (error) {
+    } catch {
       localStorage.removeItem('user');
     }
   }
   setLoadingAuth(false);
 }, []);
 
-  // Register function
-  const register = async (userData) => {
-    try {
-      // First check if user exists in JSON Server
-      const response = await api.get(`/users?email=${userData.email}`);
+    // registration
+
+// const register = async (userData) => {
+//     try {
+//       const response = await api.get(`/users?email=${userData.email}`);
+
+//       if (response.data.length > 0) {
+//         return { 
+//           success: false, 
+//           error: 'Email already registered' 
+//         };
+//       }
+
+//       const generateId = () => {
+//   return Date.now().toString();
+// };
+
+//       const newUser = {
+//         ...userData,
+//         // id: Date.now().toString()
+//         id: generateId(),
+//       };
+
+//       await api.post('/users', newUser);
+//       return { success: true };
+//     } 
+
+//     catch (error) {
+//       if (error.code === 'ERR_NETWORK') {
+//         return registerWithLocalStorage(userData);
+//       }
+//       return { 
+//         success: false, 
+//         error: 'Registration failed' 
+//       };
+//     }
+//   };
+const register = async (userData) => {
+  try {
+    const response = await api.post("/users/register", userData);
+
+    const data = response.data;
+
+    
+    localStorage.setItem("token", data.token);
+    localStorage.setItem("user", JSON.stringify(data));
+
+    // if you have state
+    setUser(data);
+
+    return {
+      success: true,
+      user: data
+    };
+
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.message || "Registration failed"
+    };
+  }
+};
+
+ 
+
+
+      //  logination
+
+  // const login = async (email, password) => {
+  //   try {
+  //     const response = await api.get(`/users?email=${email}&password=${password}`);
       
-      if (response.data.length > 0) {
-        return { 
-          success: false, 
-          error: 'Email already registered' 
-        };
-      }
+  //     if (response.data.length > 0) {
+  //       const user = response.data[0];
 
-      // Create new user with ID
-      const newUser = {
-        ...userData,
-        id: Date.now().toString()
-      };
+  //       if (user.status === "blocked") {
+  //   return {
+  //     success: false,
+  //     error: "Your account has been blocked by admin"
+  //   };
+  // }
 
-      // Save to JSON Server
-      await api.post('/users', newUser);
-      
-      return { success: true };
-    } catch (error) {
-      // If JSON Server is not running, use localStorage as fallback
-      if (error.code === 'ERR_NETWORK') {
-        return registerWithLocalStorage(userData);
-      }
-      return { 
-        success: false, 
-        error: 'Registration failed' 
-      };
-    }
-  };
-
-  // Fallback registration with localStorage
-  const registerWithLocalStorage = (userData) => {
-    try {
-      const existingUsers = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
-      
-      if (existingUsers.some(u => u.email === userData.email)) {
-        return { 
-          success: false, 
-          error: 'Email already registered' 
-        };
-      }
-
-      const newUser = {
-        ...userData,
-        id: Date.now().toString()
-      };
-
-      existingUsers.push(newUser);
-      localStorage.setItem('registeredUsers', JSON.stringify(existingUsers));
-      
-      return { success: true };
-    } catch (error) {
-      return { 
-        success: false, 
-        error: 'Registration failed' 
-      };
-    }
-  };
-
-  // Login function
+  //       localStorage.setItem('user', JSON.stringify(user));
+  //       setUser(user);
+  //       return { success: true, user };
+  //     }
+  //     return loginWithLocalStorage(email, password);
+  //   } 
+    
+  //   catch (error) {
+  //     if (error.code === 'ERR_NETWORK') {
+  //       return loginWithLocalStorage(email, password);
+  //     }
+  //     return { 
+  //       success: false, 
+  //       error: 'Login failed' 
+  //     };
+  //   }
+  // };
   const login = async (email, password) => {
-    try {
-      // Try JSON Server first
-      const response = await api.get(`/users?email=${email}&password=${password}`);
-      
-      if (response.data.length > 0) {
-        const user = response.data[0];
-        localStorage.setItem('user', JSON.stringify(user));
-        setUser(user);
-        return { success: true, user };
-      }
+  try {
+    const response = await api.post("/users/login", {
+      email,
+      password
+    });
 
-      // Fallback to localStorage
-      return loginWithLocalStorage(email, password);
-    } catch (error) {
-      // If JSON Server is not running, use localStorage
-      if (error.code === 'ERR_NETWORK') {
-        return loginWithLocalStorage(email, password);
-      }
-      return { 
-        success: false, 
-        error: 'Login failed' 
-      };
-    }
-  };
+    const userData = response.data;
 
-  // Fallback login with localStorage
-  const loginWithLocalStorage = (email, password) => {
-    try {
-      const users = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
-      const foundUser = users.find(u => u.email === email && u.password === password);
-      
-      if (!foundUser) {
-        return { 
-          success: false, 
-          error: 'Invalid email or password' 
-        };
-      }
+    localStorage.setItem("user", JSON.stringify(userData));
+    localStorage.setItem("token", userData.token);
+    setUser(userData);
 
-      localStorage.setItem('user', JSON.stringify(foundUser));
-      setUser(foundUser);
-      return { success: true, user: foundUser };
-    } catch (error) {
-      return { 
-        success: false, 
-        error: 'Login failed' 
-      };
-    }
-  };
+    return {
+      success: true,
+      user: userData
+    };
 
-  // Logout function
-  const logout = () => {
-    localStorage.removeItem('user');
-    setUser(null);
-  };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.message || "Invalid credentials"
+    };
+  }
+};
 
-  // Check if JSON Server is running
+ 
+
+ const logout = async () => {
+  try {
+    await api.post("/auth/logout");
+  } catch (error) {
+    console.log(error);
+  }
+
+  localStorage.removeItem("user");
+  localStorage.removeItem("token");
+  setUser(null);
+};
+
+
+
+
   const checkServerStatus = async () => {
-    try {
-      await api.get('/users');
+    try { 
+      await api.get('/');
       return true;
-    } catch (error) {
+    } 
+    catch {
       return false;
     }
   };
@@ -164,8 +186,8 @@ useEffect(() => {
     user,
     register,
     login,
-    logout,
     checkServerStatus,
+    logout,
     isAuthenticated: !!user,
     loadingAuth
   };

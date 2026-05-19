@@ -1,76 +1,131 @@
+
 import React, { createContext, useContext, useState, useEffect } from "react";
-import axios from "axios";
+import { useAuth } from "./AuthContext";
+import api from "../Api/Axios";
 
 const CartContext = createContext();
 export const useCart = () => useContext(CartContext);
 
 export const CartProvider = ({ children }) => {
+  const { user, isAuthenticated, loadingAuth } = useAuth();
   const [cart, setCart] = useState([]);
-  const API_URL = "http://localhost:3001";
 
-  // Load cart from DB (or fallback to localStorage)
   useEffect(() => {
+    if (loadingAuth) return;
+
+    if (!isAuthenticated || !user) {
+      setCart([]);
+      return;
+    }
+
     const fetchCart = async () => {
       try {
-        const res = await axios.get(`${API_URL}/cart`);
+        const res = await api.get(`/cart/${user._id}`);
         setCart(res.data);
       } catch (err) {
-        console.error("Failed to load cart from DB, using localStorage", err);
-        const localCart = JSON.parse(localStorage.getItem("cart") || "[]");
-        setCart(localCart);
+        console.error("Failed to load cart", err);
       }
     };
-    fetchCart();
-  }, []);
 
-  // Sync cart to localStorage whenever it changes
-  useEffect(() => {
-    localStorage.setItem("cart", JSON.stringify(cart));
-  }, [cart]);
+    fetchCart();
+  }, [user, isAuthenticated, loadingAuth]);
 
   const addToCart = async (product) => {
-    const existing = cart.find(item => item.productId === product.id);
+    if (!user) return;
+
+    const existing = cart.find(
+      item => item.productId._id === product._id
+    );
+
     if (existing) {
-      // Update quantity in DB
-      try {
-        await axios.patch(`${API_URL}/cart/${existing.id}`, { quantity: existing.quantity + 1 });
-        setCart(cart.map(item => item.productId === product.id ? { ...item, quantity: item.quantity + 1 } : item));
-      } catch (err) {
-        console.error("Failed to update cart in DB", err);
-      }
+      const res = await api.put(`/cart/update/${existing._id}`, {
+        quantity: existing.quantity + 1
+      });
+
+      setCart(cart.map(item =>
+        item._id === existing._id ? res.data : item
+      ));
+      //  alert("Item already exists in cart");
+    return;
     } else {
-      const newItem = {
-        productId: product.id,
-        name: product.name,
-        price: product.price,
-        image: product.image,
-        category: product.category,
+      const res = await api.post("/cart/add", {
+        userId: user._id,
+        productId: product._id,
         quantity: 1
-      };
-      try {
-        const res = await axios.post(`${API_URL}/cart`, newItem);
-        setCart([...cart, res.data]);
-      } catch (err) {
-        console.error("Failed to add cart in DB", err);
-      }
+      });
+
+      setCart([...cart, res.data]);
+            // alert("add to cart");
+
     }
+  };
+
+  const increaseQty = async (productId) => {
+
+    const item = cart.find(c => c.productId._id === productId);
+    if (!item) return;
+
+    const res = await api.put(`/cart/update/${item._id}`, {
+      quantity: item.quantity + 1
+    });
+
+    setCart(cart.map(c =>
+      c._id === item._id ? res.data : c
+    ));
+  };
+
+  const decreaseQty = async (productId) => {
+    const item = cart.find(c => c.productId._id === productId);
+    if (!item) return;
+
+    if (item.quantity === 1) {
+      removeFromCart(productId);
+      return;
+    }
+
+    const res = await api.put(`/cart/update/${item._id}`, {
+      quantity: item.quantity - 1
+    });
+
+    setCart(cart.map(c =>
+      c._id === item._id ? res.data : c
+    ));
   };
 
   const removeFromCart = async (productId) => {
-    const item = cart.find(c => c.productId === productId);
+    const item = cart.find(c => c.productId._id === productId);
     if (!item) return;
-    try {
-      await axios.delete(`${API_URL}/cart/${item.id}`);
-      setCart(cart.filter(c => c.productId !== productId));
-    } catch (err) {
-      console.error("Failed to remove from DB cart", err);
-    }
+
+    await api.delete(`/cart/delete/${item._id}`);
+
+    setCart(cart.filter(c => c._id !== item._id));
   };
 
-  const totalPrice = cart.reduce((acc, item) => acc + item.price * item.quantity, 0);
+  const clearCart = async () => {
+    for (const item of cart) {
+      await api.delete(`/cart/delete/${item._id}`);
+    }
+
+    setCart([]);
+  };
+
+  const totalPrice = cart.reduce(
+    (total, item) => total + item.productId.price * item.quantity,
+    0
+  );
 
   return (
-    <CartContext.Provider value={{ cart, addToCart, removeFromCart, totalPrice }}>
+    <CartContext.Provider
+      value={{
+        cart,
+        addToCart,
+        removeFromCart,
+        increaseQty,
+        decreaseQty,
+        clearCart,
+        totalPrice
+      }}
+    >
       {children}
     </CartContext.Provider>
   );

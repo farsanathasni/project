@@ -1,10 +1,11 @@
 import React, { useEffect, useRef } from 'react';
-import coolerImg from "../../assets/cooler.webp";
-import chimminyImg from "../../assets/chimminy.jpeg";
-import dinnersetImg from "../../assets/dinnerset.jpeg";
-import indectionstoveImg from "../../assets/indectionstove.jpeg";
-import ovenImg from "../../assets/oven.jpeg";
-import nonsticcasaroleImg from "../../assets/nonsticcasarole.jpeg";
+import coolerImg from "../../Assets/cooler.webp";
+import chimminyImg from "../../Assets/chimminy.jpeg";
+import dinnersetImg from "../../Assets/dinnerset.jpeg";
+import indectionstoveImg from "../../Assets/indectionstove.jpeg";
+import ovenImg from "../../Assets/oven.jpeg";
+import nonsticcasaroleImg from "../../Assets/nonsticcasarole.jpeg";
+import { useNavigate } from 'react-router-dom';
 
 const ImageList = [
   {
@@ -52,12 +53,13 @@ const ImageList = [
 ];
 
 function Hero() {
+
+  const navigate=useNavigate()
  
   return (
     <section className="bg-gray-50 py-10">
       <div className="max-w-7xl mx-auto px-4">
 
-        {/* Heading */}
         <div className="mb-8 text-center">
           <h1 className="text-3xl md:text-4xl font-bold text-gray-900">
             Exclusive Offers on Home Essentials
@@ -67,10 +69,8 @@ function Hero() {
           </p>
         </div>
 
-        {/* Auto-scrolling container */}
         <div className="overflow-hidden relative">
           <div className="flex animate-scroll gap-6">
-            {/* Duplicate the list for seamless infinite scroll */}
             {[...ImageList, ...ImageList].map((item, index) => (
               <div
                 key={index}
@@ -95,7 +95,9 @@ function Hero() {
                   <p className="mt-2 text-sm text-gray-600">
                     {item.description}
                   </p>
-                  <button className="mt-4 w-full bg-amber-600 text-white py-2 rounded-lg hover:bg-amber-700 transition">
+                  <button className="mt-4 w-full bg-amber-600 text-white py-2 rounded-lg hover:bg-amber-700 transition"
+                  onClick={()=>navigate("/products")}
+                  >
                     Shop Now
                   </button>
                 </div>

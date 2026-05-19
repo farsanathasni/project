@@ -1,13 +1,14 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 
 function Banner() {
+  const navigate=useNavigate()
   return (
 <section className="py-15 bg-gray-50">
   <div className="max-w-5xl mx-auto px-6">
 
     <div className="bg-gradient-to-r from-amber-500 to-orange-600 rounded-3xl p-20 shadow-xl p-10 flex flex-col md:flex-row items-center justify-between">
 
-      {/* Left Content */}
       <div className="text-white text-center md:text-left">
         <p className="text-sm uppercase tracking-widest mb-2">
           🎄 Limited Time Offer
@@ -26,12 +27,13 @@ function Banner() {
           kitchen essentials. Hurry, offers end soon!
         </p>
 
-        <button className="mt-6 bg-white text-amber-700 font-semibold px-7 py-3 rounded-lg hover:bg-gray-100 transition">
+        <button className="mt-6 bg-white text-amber-700 font-semibold px-7 py-3 rounded-lg hover:bg-gray-100 transition"
+        onClick={()=>navigate("/products")}
+        >
           Shop Now 🎁
         </button>
       </div>
 
-      {/* Right Offer Box */}
       <div className="mt-10 md:mt-0">
         <div className="bg-white/20 backdrop-blur-md rounded-2xl p-8 text-center text-white">
           <p className="text-lg font-medium">Christmas Special</p>
